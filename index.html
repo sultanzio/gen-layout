@@ -269,91 +269,115 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-  <script>
-    const container = document.getElementById("container");
-    const gridOverlay = document.getElementById("grid-overlay");
-    const generateBtn = document.getElementById("generateBtn");
-    const saveImageBtn = document.getElementById("saveImageBtn");
-    const savePdfBtn = document.getElementById("savePdfBtn");
-    const aspectSelect = document.getElementById("aspectSelect");
-    const gapRange = document.getElementById("gapRange");
+<script>
+  const container = document.getElementById("container");
+  const gridOverlayId = "grid-overlay"; // ID overlay yang akan disimpan
 
-    // Daftar blok mandatory & optional
-    const mandatoryBlocks = ["brand", "cta", "footer"];
-    const optionalBlocks = ["tagline", "visualHook", "mainImage", "text", "subText", "cta2"];
+  // Simpan template asli dari container
+  const originalContainerContent = `
+    <div id="${gridOverlayId}"></div>
+    <div class="block brand">Brand / Logo</div>
+    <div class="block cta">Main CTA</div>
+    <div class="block footer">Footer</div>
+    <div class="block tagline">Tagline</div>
+    <div class="block visualHook">Visual Hook</div>
+    <div class="block mainImage">Main Image</div>
+    <div class="block text">Main Text</div>
+    <div class="block subText">Sub Text</div>
+    <div class="block cta2">Secondary CTA</div>
+  `;
 
-    // Semua blok
-    const allBlocks = [...mandatoryBlocks, ...optionalBlocks];
+  // Daftar blok mandatory & optional
+  const mandatoryBlocks = ["brand", "cta", "footer"];
+  const optionalBlocks = ["tagline", "visualHook", "mainImage", "text", "subText", "cta2"];
+  const allBlocks = [...mandatoryBlocks, ...optionalBlocks];
+  const colors = ['#ffadad', '#ffd6a5', '#fdffb6', '#caffbf', '#9bf6ff', '#a0c4ff', '#bdb2ff', '#ffc6ff'];
+  let currentColumns = 0;
+  let currentRows = 0;
 
-    // Warna latar acak
-    const colors = ['#ffadad', '#ffd6a5', '#fdffb6', '#caffbf', '#9bf6ff', '#a0c4ff', '#bdb2ff', '#ffc6ff'];
+  function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
 
-    // Menyimpan jumlah kolom/baris saat ini agar overlay bisa di-draw ulang
-    let currentColumns = 0;
-    let currentRows = 0;
+  function getSelectedBlocks() {
+    let selected = [...mandatoryBlocks];
+    if (document.getElementById("taglineCheck").checked) selected.push("tagline");
+    if (document.getElementById("visualHookCheck").checked) selected.push("visualHook");
+    if (document.getElementById("mainImageCheck").checked) selected.push("mainImage");
+    if (document.getElementById("textCheck").checked) selected.push("text");
+    if (document.getElementById("subTextCheck").checked) selected.push("subText");
+    if (document.getElementById("cta2Check").checked) selected.push("cta2");
+    return selected;
+  }
 
-    // Helper: acak array
-    function shuffleArray(array) {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
+  function generateRandomLayout() {
+    // Reset container ke template awal sehingga semua blok kembali muncul
+    container.innerHTML = originalContainerContent;
+    const gridOverlay = document.getElementById(gridOverlayId);
+
+    // Hapus nested grid yang sudah ada (jika ada)
+    document.querySelectorAll('.nested').forEach(el => el.remove());
+
+    gridOverlay.innerHTML = '';
+
+    const columns = Math.floor(Math.random() * 3) + 2;
+    const visibleBlocks = getSelectedBlocks();
+    const rows = Math.max(3, Math.ceil(visibleBlocks.length / columns) + Math.floor(Math.random() * 3));
+    let gridAreas = Array(rows).fill().map(() => Array(columns).fill('.'));
+    let blockPositions = {};
+
+    // Tempatkan footer di baris terakhir
+    const footerSpan = Math.floor(Math.random() * columns) + 1;
+    for (let c = 0; c < footerSpan; c++) {
+      gridAreas[rows - 1][c] = 'footer';
+    }
+    blockPositions['footer'] = { row: rows - 1, col: 0, colSpan: footerSpan, rowSpan: 1 };
+
+    const placeBlock = (block, minRow, maxRow) => {
+      const rowSpan = Math.random() < 0.3 ? 2 : 1;
+      const colSpan = Math.min(Math.floor(Math.random() * 3) + 1, columns);
+      let placed = false;
+      for (let attempt = 0; attempt < 20 && !placed; attempt++) {
+        const r = Math.floor(Math.random() * (maxRow - minRow - rowSpan + 1)) + minRow;
+        const c = Math.floor(Math.random() * (columns - colSpan + 1));
+        if (isAreaFree(gridAreas, r, c, rowSpan, colSpan)) {
+          for (let i = 0; i < rowSpan; i++) {
+            for (let j = 0; j < colSpan; j++) {
+              gridAreas[r + i][c + j] = block;
+            }
+          }
+          blockPositions[block] = { row: r, col: c, rowSpan, colSpan };
+          placed = true;
+        }
       }
-      return array;
+    };
+
+    function isAreaFree(grid, row, col, rowSpan, colSpan) {
+      if (row + rowSpan > grid.length || col + colSpan > grid[0].length) return false;
+      for (let i = 0; i < rowSpan; i++) {
+        for (let j = 0; j < colSpan; j++) {
+          if (grid[row + i][col + j] !== '.') return false;
+        }
+      }
+      return true;
     }
 
-    // Dapatkan daftar blok yang dipilih user (mandatory + optional tercentang)
-    function getSelectedBlocks() {
-      // Mulai dari mandatory
-      let selected = [...mandatoryBlocks]; // brand, cta, footer (selalu ada)
-      // Tambahkan optional jika dicentang
-      if (document.getElementById("taglineCheck").checked) selected.push("tagline");
-      if (document.getElementById("visualHookCheck").checked) selected.push("visualHook");
-      if (document.getElementById("mainImageCheck").checked) selected.push("mainImage");
-      if (document.getElementById("textCheck").checked) selected.push("text");
-      if (document.getElementById("subTextCheck").checked) selected.push("subText");
-      if (document.getElementById("cta2Check").checked) selected.push("cta2");
-      return selected;
-    }
+    // Tempatkan blok mandatory
+    placeBlock('brand', 0, rows - 2);
+    placeBlock('cta', 0, rows - 2);
 
-    // Generate layout baru (posisi acak)
-    function generateRandomLayout() {
-      // Hapus nested grid yang sudah ada sebelum generate layout baru
-      document.querySelectorAll('.nested').forEach(el => el.remove());
-
-      // Hapus overlay lama
-      gridOverlay.innerHTML = '';
-
-      // Tentukan kolom (2-4)
-      const columns = Math.floor(Math.random() * 3) + 2;
-
-      // Ambil blok-blok terpilih
-      const visibleBlocks = getSelectedBlocks();
-
-      // Hitung jumlah baris minimal
-      const rows = Math.max(
-        3,
-        Math.ceil(visibleBlocks.length / columns) + Math.floor(Math.random() * 3)
-      );
-
-      // Buat array 2D untuk grid areas
-      let gridAreas = Array(rows).fill().map(() => Array(columns).fill('.'));
-      let blockPositions = {};
-
-      // Tempatkan footer di baris terakhir
-      const footerSpan = Math.floor(Math.random() * columns) + 1;
-      for (let c = 0; c < footerSpan; c++) {
-        gridAreas[rows - 1][c] = 'footer';
-      }
-      blockPositions['footer'] = { row: rows - 1, col: 0, colSpan: footerSpan, rowSpan: 1 };
-
-      // Fungsi bantu menempatkan blok
-      const placeBlock = (block, minRow, maxRow) => {
-        const rowSpan = Math.random() < 0.3 ? 2 : 1;
-        const colSpan = Math.min(Math.floor(Math.random() * 3) + 1, columns);
-        let placed = false;
-        for (let attempt = 0; attempt < 20 && !placed; attempt++) {
-          const r = Math.floor(Math.random() * (maxRow - minRow - rowSpan + 1)) + minRow;
-          const c = Math.floor(Math.random() * (columns - colSpan + 1));
+    // Tempatkan blok lainnya
+    const remainingBlocks = shuffleArray(visibleBlocks.filter(b => !blockPositions[b]));
+    remainingBlocks.forEach(block => {
+      const rowSpan = Math.random() < 0.2 ? 2 : 1;
+      const colSpan = Math.min(Math.floor(Math.random() * 3) + 1, columns);
+      let placed = false;
+      for (let r = 0; r < rows - 1 && !placed; r++) {
+        for (let c = 0; c < columns && !placed; c++) {
           if (isAreaFree(gridAreas, r, c, rowSpan, colSpan)) {
             for (let i = 0; i < rowSpan; i++) {
               for (let j = 0; j < colSpan; j++) {
@@ -364,180 +388,136 @@
             placed = true;
           }
         }
-      };
-
-      function isAreaFree(grid, row, col, rowSpan, colSpan) {
-        if (row + rowSpan > grid.length || col + colSpan > grid[0].length) return false;
-        for (let i = 0; i < rowSpan; i++) {
-          for (let j = 0; j < colSpan; j++) {
-            if (grid[row + i][col + j] !== '.') return false;
-          }
-        }
-        return true;
       }
+    });
 
-      // Tempatkan blok mandatory: brand & cta
-      placeBlock('brand', 0, rows - 2);
-      placeBlock('cta', 0, rows - 2);
-
-      // Tempatkan blok lainnya
-      const remainingBlocks = shuffleArray(visibleBlocks.filter(b => !blockPositions[b]));
-      remainingBlocks.forEach(block => {
-        const rowSpan = Math.random() < 0.2 ? 2 : 1;
-        const colSpan = Math.min(Math.floor(Math.random() * 3) + 1, columns);
-        let placed = false;
-        for (let r = 0; r < rows - 1 && !placed; r++) {
-          for (let c = 0; c < columns && !placed; c++) {
-            if (isAreaFree(gridAreas, r, c, rowSpan, colSpan)) {
-              for (let i = 0; i < rowSpan; i++) {
-                for (let j = 0; j < colSpan; j++) {
-                  gridAreas[r + i][c + j] = block;
-                }
-              }
-              blockPositions[block] = { row: r, col: c, rowSpan, colSpan };
-              placed = true;
-            }
-          }
-        }
-      });
-
-      // Optional: Nested grid (10% chance)
-      if (Math.random() < 0.1 && visibleBlocks.length) {
-        const nestedBlock = shuffleArray(visibleBlocks)[0];
-        const target = document.querySelector(`.${nestedBlock}`);
-        if (target) {
-          const nestedGrid = document.createElement('div');
-          nestedGrid.className = 'nested block ' + nestedBlock;
-          nestedGrid.style.gridTemplateColumns = '1fr 1fr';
-          nestedGrid.innerHTML = `
-            <div style="background: #d0d0d0;">Sub 1</div>
-            <div style="background: #d0d0d0;">Sub 2</div>
-          `;
-          target.replaceWith(nestedGrid);
-        }
-      }
-
-      // Terapkan grid ke container
-      container.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
-      container.style.gridTemplateRows = `repeat(${rows}, auto)`;
-      container.style.gridTemplateAreas = gridAreas.map(row => `"${row.join(' ')}"`).join(' ');
-
-      // Tampilkan/hilangkan blok berdasarkan blockPositions
-      allBlocks.forEach(block => {
-        const el = document.querySelector(`.${block}`);
-        if (blockPositions[block]) {
-          el.style.display = 'flex';
-          el.style.gridArea = block;
-        } else {
-          el.style.display = 'none';
-        }
-      });
-
-      // Terapkan warna acak pada blok yang tampil
-      document.querySelectorAll('.block').forEach(block => {
-        if (block.style.display !== 'none') {
-          block.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-        }
-      });
-
-      // Simpan jumlah kolom & baris dan gambar ulang overlay
-      currentColumns = columns;
-      currentRows = rows;
-      drawOverlay();
-    }
-
-    // Gambar garis overlay berdasarkan currentColumns & currentRows
-    function drawOverlay() {
-      if (!gridOverlay) return;
-      // Bersihkan garis lama
-      gridOverlay.innerHTML = '';
-
-      const gapVal = parseInt(gapRange.value, 10);
-      const containerWidth = container.offsetWidth;
-      const containerHeight = container.offsetHeight;
-
-      if (currentColumns < 1 || currentRows < 1) return;
-
-      // Hitung ukuran sel efektif
-      const effectiveCellWidth = (containerWidth - gapVal * (currentColumns - 1)) / currentColumns;
-      const effectiveCellHeight = (containerHeight - gapVal * (currentRows - 1)) / currentRows;
-
-      // Garis vertikal
-      for (let i = 1; i < currentColumns; i++) {
-        const x = i * effectiveCellWidth + (i - 0.5) * gapVal;
-        const line = document.createElement('div');
-        line.style.position = 'absolute';
-        line.style.top = '0';
-        line.style.left = `${x}px`;
-        line.style.width = '1px';
-        line.style.height = '100%';
-        line.style.backgroundColor = '#ccc';
-        gridOverlay.appendChild(line);
-      }
-      // Garis horizontal
-      for (let j = 1; j < currentRows; j++) {
-        const y = j * effectiveCellHeight + (j - 0.5) * gapVal;
-        const line = document.createElement('div');
-        line.style.position = 'absolute';
-        line.style.left = '0';
-        line.style.top = `${y}px`;
-        line.style.height = '1px';
-        line.style.width = '100%';
-        line.style.backgroundColor = '#ccc';
-        gridOverlay.appendChild(line);
+    // Optional: Nested grid (10% chance)
+    if (Math.random() < 0.1 && visibleBlocks.length) {
+      const nestedBlock = shuffleArray(visibleBlocks)[0];
+      const target = document.querySelector(`.${nestedBlock}`);
+      if (target) {
+        const nestedGrid = document.createElement('div');
+        nestedGrid.className = 'nested block ' + nestedBlock;
+        nestedGrid.style.gridTemplateColumns = '1fr 1fr';
+        nestedGrid.innerHTML = `
+          <div style="background: #d0d0d0;">Sub 1</div>
+          <div style="background: #d0d0d0;">Sub 2</div>
+        `;
+        target.replaceWith(nestedGrid);
       }
     }
 
-    // Update gap (hanya mengubah jarak, tidak re-random)
-    function updateGap() {
-      document.documentElement.style.setProperty('--gap', gapRange.value + 'px');
-      drawOverlay();
-    }
+    // Terapkan grid ke container
+    container.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+    container.style.gridTemplateRows = `repeat(${rows}, auto)`;
+    container.style.gridTemplateAreas = gridAreas.map(row => `"${row.join(' ')}"`).join(' ');
 
-    // Update aspect ratio (hanya ubah rasio, tidak re-random)
-    function updateAspectRatio() {
-      const ratioValue = aspectSelect.value.replace(/\s/g, '');
-      container.style.aspectRatio = ratioValue;
-      setTimeout(drawOverlay, 50); // beri sedikit jeda agar layout reflow
-    }
+    // Tampilkan/hilangkan blok berdasarkan penempatan
+    allBlocks.forEach(block => {
+      const el = document.querySelector(`.${block}`);
+      if (blockPositions[block]) {
+        el.style.display = 'flex';
+        el.style.gridArea = block;
+      } else {
+        el.style.display = 'none';
+      }
+    });
 
-    // Save as Image
-    function saveAsImage() {
-      html2canvas(container).then(canvas => {
-        const link = document.createElement('a');
-        link.download = 'layout.png';
-        link.href = canvas.toDataURL();
-        link.click();
+    // Terapkan warna acak pada blok yang tampil
+    document.querySelectorAll('.block').forEach(block => {
+      if (block.style.display !== 'none') {
+        block.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      }
+    });
+
+    currentColumns = columns;
+    currentRows = rows;
+    drawOverlay();
+  }
+
+  function drawOverlay() {
+    const gridOverlay = document.getElementById(gridOverlayId);
+    if (!gridOverlay) return;
+    gridOverlay.innerHTML = '';
+
+    const gapVal = parseInt(document.getElementById("gapRange").value, 10);
+    const containerWidth = container.offsetWidth;
+    const containerHeight = container.offsetHeight;
+
+    if (currentColumns < 1 || currentRows < 1) return;
+
+    const effectiveCellWidth = (containerWidth - gapVal * (currentColumns - 1)) / currentColumns;
+    const effectiveCellHeight = (containerHeight - gapVal * (currentRows - 1)) / currentRows;
+
+    for (let i = 1; i < currentColumns; i++) {
+      const x = i * effectiveCellWidth + (i - 0.5) * gapVal;
+      const line = document.createElement('div');
+      line.style.position = 'absolute';
+      line.style.top = '0';
+      line.style.left = `${x}px`;
+      line.style.width = '1px';
+      line.style.height = '100%';
+      line.style.backgroundColor = '#ccc';
+      gridOverlay.appendChild(line);
+    }
+    for (let j = 1; j < currentRows; j++) {
+      const y = j * effectiveCellHeight + (j - 0.5) * gapVal;
+      const line = document.createElement('div');
+      line.style.position = 'absolute';
+      line.style.left = '0';
+      line.style.top = `${y}px`;
+      line.style.height = '1px';
+      line.style.width = '100%';
+      line.style.backgroundColor = '#ccc';
+      gridOverlay.appendChild(line);
+    }
+  }
+
+  function updateGap() {
+    document.documentElement.style.setProperty('--gap', document.getElementById("gapRange").value + 'px');
+    drawOverlay();
+  }
+
+  function updateAspectRatio() {
+    const aspectSelect = document.getElementById("aspectSelect");
+    const ratioValue = aspectSelect.value.replace(/\s/g, '');
+    container.style.aspectRatio = ratioValue;
+    setTimeout(drawOverlay, 50);
+  }
+
+  function saveAsImage() {
+    html2canvas(container).then(canvas => {
+      const link = document.createElement('a');
+      link.download = 'layout.png';
+      link.href = canvas.toDataURL();
+      link.click();
+    });
+  }
+
+  async function saveAsPDF() {
+    const { jsPDF } = window.jspdf;
+    html2canvas(container).then(canvas => {
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: document.getElementById("aspectSelect").value === "16/9" || document.getElementById("aspectSelect").value === "4/3"
+          ? 'landscape'
+          : 'portrait',
+        unit: 'px',
+        format: [canvas.width, canvas.height]
       });
-    }
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+      pdf.save("layout.pdf");
+    });
+  }
 
-    // Save as PDF
-    async function saveAsPDF() {
-      const { jsPDF } = window.jspdf;
-      html2canvas(container).then(canvas => {
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-          orientation: aspectSelect.value === "16/9" || aspectSelect.value === "4/3"
-            ? 'landscape'
-            : 'portrait',
-          unit: 'px',
-          format: [canvas.width, canvas.height]
-        });
-        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-        pdf.save("layout.pdf");
-      });
-    }
+  document.getElementById("generateBtn").addEventListener('click', generateRandomLayout);
+  document.getElementById("saveImageBtn").addEventListener('click', saveAsImage);
+  document.getElementById("savePdfBtn").addEventListener('click', saveAsPDF);
+  document.getElementById("aspectSelect").addEventListener('change', updateAspectRatio);
+  document.getElementById("gapRange").addEventListener('input', updateGap);
 
-    // Event listeners
-    generateBtn.addEventListener('click', generateRandomLayout);
-    saveImageBtn.addEventListener('click', saveAsImage);
-    savePdfBtn.addEventListener('click', saveAsPDF);
-    aspectSelect.addEventListener('change', updateAspectRatio);
-    gapRange.addEventListener('input', updateGap);
-
-    // Generate pertama kali
-    generateRandomLayout();
-  </script>
+  generateRandomLayout();
+</script>
 </body>
 
 </html>
