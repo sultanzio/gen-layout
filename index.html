@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Generator Layout for Design</title>
+  <title>Generator Layout dengan Checklist & Keterangan Terpadu</title>
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
@@ -316,6 +316,9 @@
 
     // Generate layout baru (posisi acak)
     function generateRandomLayout() {
+      // Hapus nested grid yang sudah ada sebelum generate layout baru
+      document.querySelectorAll('.nested').forEach(el => el.remove());
+
       // Hapus overlay lama
       gridOverlay.innerHTML = '';
 
@@ -372,11 +375,11 @@
         return true;
       }
 
-      // Tempatkan brand & cta
+      // Tempatkan blok mandatory: brand & cta
       placeBlock('brand', 0, rows - 2);
       placeBlock('cta', 0, rows - 2);
 
-      // Tempatkan blok lain
+      // Tempatkan blok lainnya
       const remainingBlocks = shuffleArray(visibleBlocks.filter(b => !blockPositions[b]));
       remainingBlocks.forEach(block => {
         const rowSpan = Math.random() < 0.2 ? 2 : 1;
@@ -397,26 +400,28 @@
         }
       });
 
-      // Optional: Nested grid (1% chance)
+      // Optional: Nested grid (10% chance)
       if (Math.random() < 0.1 && visibleBlocks.length) {
         const nestedBlock = shuffleArray(visibleBlocks)[0];
-        const nestedGrid = document.createElement('div');
-        nestedGrid.className = 'nested block ' + nestedBlock;
-        nestedGrid.style.gridTemplateColumns = '1fr 1fr';
-        nestedGrid.innerHTML = `
-          <div style="background: #d0d0d0;">Sub 1</div>
-          <div style="background: #d0d0d0;">Sub 2</div>
-        `;
         const target = document.querySelector(`.${nestedBlock}`);
-        if (target) target.replaceWith(nestedGrid);
+        if (target) {
+          const nestedGrid = document.createElement('div');
+          nestedGrid.className = 'nested block ' + nestedBlock;
+          nestedGrid.style.gridTemplateColumns = '1fr 1fr';
+          nestedGrid.innerHTML = `
+            <div style="background: #d0d0d0;">Sub 1</div>
+            <div style="background: #d0d0d0;">Sub 2</div>
+          `;
+          target.replaceWith(nestedGrid);
+        }
       }
 
-      // Terapkan grid
+      // Terapkan grid ke container
       container.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
       container.style.gridTemplateRows = `repeat(${rows}, auto)`;
       container.style.gridTemplateAreas = gridAreas.map(row => `"${row.join(' ')}"`).join(' ');
 
-      // Tampilkan/hilangkan blok
+      // Tampilkan/hilangkan blok berdasarkan blockPositions
       allBlocks.forEach(block => {
         const el = document.querySelector(`.${block}`);
         if (blockPositions[block]) {
@@ -427,14 +432,14 @@
         }
       });
 
-      // Warna acak
+      // Terapkan warna acak pada blok yang tampil
       document.querySelectorAll('.block').forEach(block => {
         if (block.style.display !== 'none') {
           block.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
         }
       });
 
-      // Simpan kolom & baris ke variabel global, lalu gambar overlay
+      // Simpan jumlah kolom & baris dan gambar ulang overlay
       currentColumns = columns;
       currentRows = rows;
       drawOverlay();
