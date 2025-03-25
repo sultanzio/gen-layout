@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Generator Layout dengan Checklist & Keterangan Terpadu</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    :root {
+      --gap: 10px;
+      /* Default grid gap */
+      --transition-duration: 0.5s;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: sans-serif;
+      background: #fafafa;
+    }
+
+    /* Pastikan container tidak terpengaruh flex parent */
+    #container {
+      aspect-ratio: 9/16;
+      width: 360px;
+      max-width: 100%;
+      display: grid;
+      gap: var(--gap);
+      background: #f2f2f2;
+      position: relative;
+      border: 1px solid #ccc;
+      flex: 0 0 auto;
+      align-self: flex-start;
+    }
+
+    /* Overlay untuk menampilkan garis grid di belakang blok */
+    #grid-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .block {
+      border: 1px dashed #999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 4px;
+      overflow: hidden;
+      animation: fadeIn var(--transition-duration) ease-out;
+      transition: background-color 0.3s ease, transform 0.3s ease;
+      position: relative;
+      z-index: 1;
+      /* Pastikan blok di atas overlay */
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Styling slider agar ada garis (track) yang jelas */
+    .form-range {
+      width: 200px;
+      height: 4px;
+      background-color: transparent;
+      /* latar transparan, track dibuat via pseudo-element */
+      appearance: none;
+      cursor: pointer;
+    }
+
+    /* Track (garis) pada WebKit */
+    .form-range::-webkit-slider-runnable-track {
+      height: 4px;
+      background: #ddd;
+      border-radius: 2px;
+    }
+
+    .form-range::-webkit-slider-thumb {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      background: #007bff;
+      border-radius: 50%;
+      margin-top: -6px;
+      /* supaya jempol pas di tengah track */
+      border: 2px solid #fff;
+      box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Track pada Firefox */
+    .form-range::-moz-range-track {
+      height: 4px;
+      background: #ddd;
+      border-radius: 2px;
+    }
+
+    .form-range::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      background: #007bff;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+    }
+
+    footer {
+      text-align: center;
+      padding-bottom: 40px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container my-4">
+    <h2 class="text-center mb-4">Layout Generator fo Design</h2>
+
+    <div class="row">
+      <!-- Kolom kiri: Container layout -->
+      <div class="col-md-6 d-flex justify-content-center mb-4">
+        <div id="container">
+          <!-- Grid overlay: garis-garis akan digambar di sini -->
+          <div id="grid-overlay"></div>
+          <!-- Blok-blok layout -->
+          <div class="block brand">Brand / Logo</div>
+          <div class="block cta">Main CTA</div>
+          <div class="block footer">Footer</div>
+          <div class="block tagline">Tagline</div>
+          <div class="block visualHook">Visual Hook</div>
+          <div class="block mainImage">Main Image</div>
+          <div class="block text">Main Text</div>
+          <div class="block subText">Sub Text</div>
+          <div class="block cta2">Secondary CTA</div>
+        </div>
+      </div>
+
+      <!-- Kolom kanan: Card berisi Checklist, Kontrol, dan Keterangan Layout -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body">
+
+            <!-- Checklist Blok (Required & Optional) -->
+            <h5 class="mb-3">Pilih Blok (Required &amp; Optional)</h5>
+            <!-- Required: selalu checked & disabled -->
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="brandCheck" checked disabled>
+              <label class="form-check-label" for="brandCheck">
+                Brand / Logo (Required)
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="ctaCheck" checked disabled>
+              <label class="form-check-label" for="ctaCheck">
+                Main CTA (Required)
+              </label>
+            </div>
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="footerCheck" checked disabled>
+              <label class="form-check-label" for="footerCheck">
+                Footer (Required)
+              </label>
+            </div>
+
+            <!-- Optional -->
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="taglineCheck" checked>
+              <label class="form-check-label" for="taglineCheck">
+                Tagline (Optional)
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="visualHookCheck" checked>
+              <label class="form-check-label" for="visualHookCheck">
+                Visual Hook (Optional)
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="mainImageCheck" checked>
+              <label class="form-check-label" for="mainImageCheck">
+                Main Image (Optional)
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="textCheck" checked>
+              <label class="form-check-label" for="textCheck">
+                Main Text (Optional)
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="subTextCheck" checked>
+              <label class="form-check-label" for="subTextCheck">
+                Sub Text (Optional)
+              </label>
+            </div>
+            <div class="form-check mb-3">
+              <input class="form-check-input" type="checkbox" id="cta2Check" checked>
+              <label class="form-check-label" for="cta2Check">
+                Secondary CTA (Optional)
+              </label>
+            </div>
+
+            <hr>
+
+            <!-- Kontrol Layout -->
+            <h5 class="mb-3">Kontrol Layout</h5>
+            <button id="generateBtn" class="btn btn-primary mb-2 w-100">Generate Layout Baru</button>
+            <div class="d-flex flex-wrap gap-2 mb-2">
+              <button id="saveImageBtn" class="btn btn-success flex-fill">Save as Image</button>
+              <button id="savePdfBtn" class="btn btn-warning flex-fill">Save as PDF</button>
+            </div>
+            <div class="mb-2">
+              <label for="aspectSelect" class="form-label">Aspect Ratio:</label>
+              <select id="aspectSelect" class="form-select">
+                <option value="9/16">9:16</option>
+                <option value="16/9">16:9</option>
+                <option value="4/3">4:3</option>
+                <option value="1/1">1:1</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="gapRange" class="form-label">Grid Gap:</label>
+              <input type="range" id="gapRange" class="form-range" min="0" max="40" value="10">
+            </div>
+
+            <hr>
+
+            <!-- Keterangan Layout -->
+            <h5 class="mb-3">Keterangan Layout</h5>
+            <ul class="ps-3">
+              <li><strong>Brand / Logo:</strong> Menampilkan identitas dan logo perusahaan.</li>
+              <li><strong>Main CTA:</strong> Tombol aksi utama untuk mengarahkan pengguna.</li>
+              <li><strong>Footer:</strong> Informasi tambahan, link, dan hak cipta.</li>
+              <li><strong>Tagline:</strong> Frasa pendek yang menggambarkan nilai atau slogan.</li>
+              <li><strong>Visual Hook:</strong> Elemen visual untuk menarik perhatian.</li>
+              <li><strong>Main Image:</strong> Gambar utama yang merepresentasikan konten.</li>
+              <li><strong>Main Text:</strong> Teks utama yang menyampaikan informasi penting.</li>
+              <li><strong>Sub Text:</strong> Teks pendukung untuk informasi tambahan.</li>
+              <li><strong>Secondary CTA:</strong> Aksi tambahan bagi pengguna.</li>
+            </ul>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer>Created by <a href="https://www.instagram.com/uipastel">Bagus Lindu Pamungkas</a></footer>
+
+  <!-- Library untuk save image & PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script>
+    const container = document.getElementById("container");
+    const gridOverlay = document.getElementById("grid-overlay");
+    const generateBtn = document.getElementById("generateBtn");
+    const saveImageBtn = document.getElementById("saveImageBtn");
+    const savePdfBtn = document.getElementById("savePdfBtn");
+    const aspectSelect = document.getElementById("aspectSelect");
+    const gapRange = document.getElementById("gapRange");
+
+    // Daftar blok mandatory & optional
+    const mandatoryBlocks = ["brand", "cta", "footer"];
+    const optionalBlocks = ["tagline", "visualHook", "mainImage", "text", "subText", "cta2"];
+
+    // Semua blok
+    const allBlocks = [...mandatoryBlocks, ...optionalBlocks];
+
+    // Warna latar acak
+    const colors = ['#ffadad', '#ffd6a5', '#fdffb6', '#caffbf', '#9bf6ff', '#a0c4ff', '#bdb2ff', '#ffc6ff'];
+
+    // Menyimpan jumlah kolom/baris saat ini agar overlay bisa di-draw ulang
+    let currentColumns = 0;
+    let currentRows = 0;
+
+    // Helper: acak array
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    // Dapatkan daftar blok yang dipilih user (mandatory + optional tercentang)
+    function getSelectedBlocks() {
+      // Mulai dari mandatory
+      let selected = [...mandatoryBlocks]; // brand, cta, footer (selalu ada)
+      // Tambahkan optional jika dicentang
+      if (document.getElementById("taglineCheck").checked) selected.push("tagline");
+      if (document.getElementById("visualHookCheck").checked) selected.push("visualHook");
+      if (document.getElementById("mainImageCheck").checked) selected.push("mainImage");
+      if (document.getElementById("textCheck").checked) selected.push("text");
+      if (document.getElementById("subTextCheck").checked) selected.push("subText");
+      if (document.getElementById("cta2Check").checked) selected.push("cta2");
+      return selected;
+    }
+
+    // Generate layout baru (posisi acak)
+    function generateRandomLayout() {
+      // Hapus overlay lama
+      gridOverlay.innerHTML = '';
+
+      // Tentukan kolom (2-4)
+      const columns = Math.floor(Math.random() * 3) + 2;
+
+      // Ambil blok-blok terpilih
+      const visibleBlocks = getSelectedBlocks();
+
+      // Hitung jumlah baris minimal
+      const rows = Math.max(
+        3,
+        Math.ceil(visibleBlocks.length / columns) + Math.floor(Math.random() * 3)
+      );
+
+      // Buat array 2D untuk grid areas
+      let gridAreas = Array(rows).fill().map(() => Array(columns).fill('.'));
+      let blockPositions = {};
+
+      // Tempatkan footer di baris terakhir
+      const footerSpan = Math.floor(Math.random() * columns) + 1;
+      for (let c = 0; c < footerSpan; c++) {
+        gridAreas[rows - 1][c] = 'footer';
+      }
+      blockPositions['footer'] = { row: rows - 1, col: 0, colSpan: footerSpan, rowSpan: 1 };
+
+      // Fungsi bantu menempatkan blok
+      const placeBlock = (block, minRow, maxRow) => {
+        const rowSpan = Math.random() < 0.3 ? 2 : 1;
+        const colSpan = Math.min(Math.floor(Math.random() * 3) + 1, columns);
+        let placed = false;
+        for (let attempt = 0; attempt < 20 && !placed; attempt++) {
+          const r = Math.floor(Math.random() * (maxRow - minRow - rowSpan + 1)) + minRow;
+          const c = Math.floor(Math.random() * (columns - colSpan + 1));
+          if (isAreaFree(gridAreas, r, c, rowSpan, colSpan)) {
+            for (let i = 0; i < rowSpan; i++) {
+              for (let j = 0; j < colSpan; j++) {
+                gridAreas[r + i][c + j] = block;
+              }
+            }
+            blockPositions[block] = { row: r, col: c, rowSpan, colSpan };
+            placed = true;
+          }
+        }
+      };
+
+      function isAreaFree(grid, row, col, rowSpan, colSpan) {
+        if (row + rowSpan > grid.length || col + colSpan > grid[0].length) return false;
+        for (let i = 0; i < rowSpan; i++) {
+          for (let j = 0; j < colSpan; j++) {
+            if (grid[row + i][col + j] !== '.') return false;
+          }
+        }
+        return true;
+      }
+
+      // Tempatkan brand & cta
+      placeBlock('brand', 0, rows - 2);
+      placeBlock('cta', 0, rows - 2);
+
+      // Tempatkan blok lain
+      const remainingBlocks = shuffleArray(visibleBlocks.filter(b => !blockPositions[b]));
+      remainingBlocks.forEach(block => {
+        const rowSpan = Math.random() < 0.2 ? 2 : 1;
+        const colSpan = Math.min(Math.floor(Math.random() * 3) + 1, columns);
+        let placed = false;
+        for (let r = 0; r < rows - 1 && !placed; r++) {
+          for (let c = 0; c < columns && !placed; c++) {
+            if (isAreaFree(gridAreas, r, c, rowSpan, colSpan)) {
+              for (let i = 0; i < rowSpan; i++) {
+                for (let j = 0; j < colSpan; j++) {
+                  gridAreas[r + i][c + j] = block;
+                }
+              }
+              blockPositions[block] = { row: r, col: c, rowSpan, colSpan };
+              placed = true;
+            }
+          }
+        }
+      });
+
+      // Optional: Nested grid (1% chance)
+      if (Math.random() < 0.1 && visibleBlocks.length) {
+        const nestedBlock = shuffleArray(visibleBlocks)[0];
+        const nestedGrid = document.createElement('div');
+        nestedGrid.className = 'nested block ' + nestedBlock;
+        nestedGrid.style.gridTemplateColumns = '1fr 1fr';
+        nestedGrid.innerHTML = `
+          <div style="background: #d0d0d0;">Sub 1</div>
+          <div style="background: #d0d0d0;">Sub 2</div>
+        `;
+        const target = document.querySelector(`.${nestedBlock}`);
+        if (target) target.replaceWith(nestedGrid);
+      }
+
+      // Terapkan grid
+      container.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+      container.style.gridTemplateRows = `repeat(${rows}, auto)`;
+      container.style.gridTemplateAreas = gridAreas.map(row => `"${row.join(' ')}"`).join(' ');
+
+      // Tampilkan/hilangkan blok
+      allBlocks.forEach(block => {
+        const el = document.querySelector(`.${block}`);
+        if (blockPositions[block]) {
+          el.style.display = 'flex';
+          el.style.gridArea = block;
+        } else {
+          el.style.display = 'none';
+        }
+      });
+
+      // Warna acak
+      document.querySelectorAll('.block').forEach(block => {
+        if (block.style.display !== 'none') {
+          block.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        }
+      });
+
+      // Simpan kolom & baris ke variabel global, lalu gambar overlay
+      currentColumns = columns;
+      currentRows = rows;
+      drawOverlay();
+    }
+
+    // Gambar garis overlay berdasarkan currentColumns & currentRows
+    function drawOverlay() {
+      if (!gridOverlay) return;
+      // Bersihkan garis lama
+      gridOverlay.innerHTML = '';
+
+      const gapVal = parseInt(gapRange.value, 10);
+      const containerWidth = container.offsetWidth;
+      const containerHeight = container.offsetHeight;
+
+      if (currentColumns < 1 || currentRows < 1) return;
+
+      // Hitung ukuran sel efektif
+      const effectiveCellWidth = (containerWidth - gapVal * (currentColumns - 1)) / currentColumns;
+      const effectiveCellHeight = (containerHeight - gapVal * (currentRows - 1)) / currentRows;
+
+      // Garis vertikal
+      for (let i = 1; i < currentColumns; i++) {
+        const x = i * effectiveCellWidth + (i - 0.5) * gapVal;
+        const line = document.createElement('div');
+        line.style.position = 'absolute';
+        line.style.top = '0';
+        line.style.left = `${x}px`;
+        line.style.width = '1px';
+        line.style.height = '100%';
+        line.style.backgroundColor = '#ccc';
+        gridOverlay.appendChild(line);
+      }
+      // Garis horizontal
+      for (let j = 1; j < currentRows; j++) {
+        const y = j * effectiveCellHeight + (j - 0.5) * gapVal;
+        const line = document.createElement('div');
+        line.style.position = 'absolute';
+        line.style.left = '0';
+        line.style.top = `${y}px`;
+        line.style.height = '1px';
+        line.style.width = '100%';
+        line.style.backgroundColor = '#ccc';
+        gridOverlay.appendChild(line);
+      }
+    }
+
+    // Update gap (hanya mengubah jarak, tidak re-random)
+    function updateGap() {
+      document.documentElement.style.setProperty('--gap', gapRange.value + 'px');
+      drawOverlay();
+    }
+
+    // Update aspect ratio (hanya ubah rasio, tidak re-random)
+    function updateAspectRatio() {
+      const ratioValue = aspectSelect.value.replace(/\s/g, '');
+      container.style.aspectRatio = ratioValue;
+      setTimeout(drawOverlay, 50); // beri sedikit jeda agar layout reflow
+    }
+
+    // Save as Image
+    function saveAsImage() {
+      html2canvas(container).then(canvas => {
+        const link = document.createElement('a');
+        link.download = 'layout.png';
+        link.href = canvas.toDataURL();
+        link.click();
+      });
+    }
+
+    // Save as PDF
+    async function saveAsPDF() {
+      const { jsPDF } = window.jspdf;
+      html2canvas(container).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+          orientation: aspectSelect.value === "16/9" || aspectSelect.value === "4/3"
+            ? 'landscape'
+            : 'portrait',
+          unit: 'px',
+          format: [canvas.width, canvas.height]
+        });
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        pdf.save("layout.pdf");
+      });
+    }
+
+    // Event listeners
+    generateBtn.addEventListener('click', generateRandomLayout);
+    saveImageBtn.addEventListener('click', saveAsImage);
+    savePdfBtn.addEventListener('click', saveAsPDF);
+    aspectSelect.addEventListener('change', updateAspectRatio);
+    gapRange.addEventListener('input', updateGap);
+
+    // Generate pertama kali
+    generateRandomLayout();
+  </script>
+</body>
+
+</html>
