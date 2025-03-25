@@ -1,4 +1,4 @@
-# Generator Layout Ultra‑Kompleks — Dokumentasi Singkat
+# Generator Layout for Design
 
 ## 🔎 Ringkasan Fitur
 - **Checklist Blok**: Pilih blok mana saja yang ditampilkan (3 required, 6 optional)  
